@@ -26,6 +26,12 @@
     75%  { transform: rotate(-3deg) translateX(-1px); }
     100% { transform: rotate(0deg) translateX(0); }
   }
+  @keyframes msg-float {
+    0%   { opacity:0; transform:translate(-50%, 0) scale(.7); }
+    15%  { opacity:1; transform:translate(-50%, -10px) scale(1); }
+    85%  { opacity:1; transform:translate(-50%, -50px) scale(1); }
+    100% { opacity:0; transform:translate(-50%, -70px) scale(.9); }
+  }
   @keyframes petal-fall { 0%{opacity:0;transform:translateY(-10px) rotate(0deg)} 100%{opacity:.7;transform:translateY(120vh) rotate(720deg)} }
   @keyframes float-in { 0%{opacity:0;transform:translateY(30px) scale(.9)} 100%{opacity:1;transform:translateY(0) scale(1)} }
   @keyframes sparkle { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
@@ -137,6 +143,19 @@
     color: rgba(255,255,255,.9);
   }
 
+  .message-card .hint {
+    margin-top: .6rem;
+    font-size: .75rem;
+    color: rgba(255,255,255,.45);
+    font-style: italic;
+    animation: hint-pulse 2.5s ease-in-out infinite;
+    transition: opacity .5s;
+  }
+  @keyframes hint-pulse {
+    0%,100% { opacity:.45; }
+    50% { opacity:.75; }
+  }
+
   .ribbon { animation: ribbon-wave 3s ease-in-out infinite; transform-origin: center top; }
   .rose-group {
     animation: sway 4s ease-in-out infinite;
@@ -148,6 +167,34 @@
   .rose-group.wind {
     filter: brightness(1.15) drop-shadow(0 0 6px rgba(255,255,255,.3));
     animation: wind-gust .8s ease-in-out forwards, sway 4s ease-in-out infinite .8s;
+  }
+
+  .rose-message {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 50;
+    pointer-events: none;
+    font-family: sans-serif;
+    font-size: .95rem;
+    font-weight: 400;
+    letter-spacing: .3px;
+    line-height: 1.5;
+    color: #fff;
+    text-align: center;
+    max-width: 280px;
+    white-space: normal;
+    padding: .8rem 1.2rem;
+    background: rgba(26,10,46,.85);
+    border: 1px solid rgba(206,147,216,.4);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,.4), 0 0 15px rgba(206,147,216,.2);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+    animation: msg-float 3.2s ease-in-out forwards;
+  }
+
+  @media (min-width: 768px) {
+    .rose-message { font-size: 1.05rem; max-width: 320px; }
   }
 
   .rose-exploding-petal {
@@ -241,15 +288,35 @@
         </radialGradient>
       </defs>
 
-      <!-- stems -->
-      <line x1="140" y1="290" x2="100" y2="190" stroke="#4a7a4a" stroke-width="4" stroke-linecap="round"/>
-      <line x1="140" y1="290" x2="140" y2="170" stroke="#5a8a5a" stroke-width="4.5" stroke-linecap="round"/>
-      <line x1="140" y1="290" x2="180" y2="185" stroke="#4a7a4a" stroke-width="4" stroke-linecap="round"/>
+      <!-- stems — curved with thorns -->
+      <path d="M140,290 Q125,250 100,190" stroke="#4a7a4a" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M140,290 Q142,240 140,170" stroke="#5a8a5a" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      <path d="M140,290 Q155,248 180,185" stroke="#4a7a4a" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <!-- small thorns -->
+      <path d="M120,240 L116,234 L122,237" fill="#4a7a4a"/>
+      <path d="M141,230 L145,224 L142,228" fill="#5a8a5a"/>
+      <path d="M160,238 L164,232 L161,236" fill="#4a7a4a"/>
 
-      <!-- leaves -->
-      <ellipse cx="115" cy="230" rx="18" ry="9" fill="url(#leafG)" transform="rotate(-40 115 230)" opacity=".9"/>
-      <ellipse cx="163" cy="235" rx="17" ry="8" fill="url(#leafG)" transform="rotate(35 163 235)" opacity=".9"/>
-      <ellipse cx="140" cy="220" rx="16" ry="7" fill="url(#leafG)" transform="rotate(-5 140 220)" opacity=".85"/>
+      <!-- leaves — realistic shape with veins -->
+      <g transform="translate(108,228) rotate(-45)">
+        <path d="M0,0 C8,-18 25,-20 30,-8 C32,-2 20,6 0,0Z" fill="url(#leafG)" opacity=".9"/>
+        <path d="M0,0 L28,-6" stroke="rgba(255,255,255,.15)" stroke-width=".7" fill="none"/>
+        <path d="M8,-4 L18,-12" stroke="rgba(255,255,255,.1)" stroke-width=".5" fill="none"/>
+        <path d="M14,-2 L22,-8" stroke="rgba(255,255,255,.1)" stroke-width=".5" fill="none"/>
+      </g>
+      <g transform="translate(168,232) rotate(40)">
+        <path d="M0,0 C8,-18 25,-20 30,-8 C32,-2 20,6 0,0Z" fill="url(#leafG)" opacity=".9"/>
+        <path d="M0,0 L28,-6" stroke="rgba(255,255,255,.15)" stroke-width=".7" fill="none"/>
+        <path d="M8,-4 L18,-12" stroke="rgba(255,255,255,.1)" stroke-width=".5" fill="none"/>
+      </g>
+      <g transform="translate(132,218) rotate(-10)">
+        <path d="M0,0 C6,-15 22,-17 26,-6 C28,-1 17,5 0,0Z" fill="url(#leafG)" opacity=".85"/>
+        <path d="M0,0 L24,-5" stroke="rgba(255,255,255,.12)" stroke-width=".6" fill="none"/>
+      </g>
+      <!-- small leaf on right stem -->
+      <g transform="translate(170,215) rotate(55)">
+        <path d="M0,0 C4,-10 14,-12 17,-4 C18,0 11,4 0,0Z" fill="url(#leafG)" opacity=".8"/>
+      </g>
 
       <!-- ROSE LEFT -->
       <g class="rose-group" data-rose="left" style="animation-delay:.5s">
@@ -332,7 +399,8 @@
 
     <div class="message-card">
       <h2>Feliz Cumpleaños</h2>
-      <p>Un ramo de rosas blancas, tan puras y especiales como tu. ¡Que este dia sea tan hermoso como mereces!</p>
+      <p>Un ramo de rosas blancas, tan puras y especiales como t&uacute;. ¡Que este dia sea tan hermoso como mereces!</p>
+      <p class="hint" id="hint">Toca las rosas para descubrir un mensaje</p>
     </div>
   </div>
 </div>
@@ -439,6 +507,33 @@
   }
   requestAnimationFrame(animateParallax);
 
+  // ─── Rose messages ───
+  var roseMessages = [
+    // El Principito
+    '"Fue el tiempo que pasaste con tu rosa lo que la hizo tan importante." — El Principito',
+    '"Si vienes, por ejemplo, a las cuatro de la tarde, desde las tres comenzare a ser feliz." — El Principito',
+    '"Lo esencial es invisible a los ojos." — El Principito',
+    'Yo iría a la guerra por tí si lo necesitaras...',
+    'Por tí nadaría hasta el fondo del mar, aún sin poder nadar...',
+    '"Solo se ve bien con el corazon." — El Principito',
+    'Somos lo que llevamos en el corazón...',
+    '"Caminando en linea recta no puede uno llegar muy lejos." — El Principito',
+    // Te amo 3000 (Marvel)
+    'En un mundo lleno de gente común, tú eres mi excepcion de 3 millones...',
+    'Te quiero tres millones mi Adi...',
+    'Te quiero tres millones, en este y en todos los universos.',
+    'Eres mi tatuaje sin tinta que ni el tiempo, ni la distancia podrán borrar...',
+    'Te veo en las cosas pequeñas que me dijiste que te gustan...',
+    'Decir que contigo me brillan los ojos, se queda corto, contigo me brilla el alma...',
+  ];
+  var lastMsgIndex = -1;
+  function getRandomMessage() {
+    var idx;
+    do { idx = Math.floor(Math.random() * roseMessages.length); } while (idx === lastMsgIndex);
+    lastMsgIndex = idx;
+    return roseMessages[idx];
+  }
+
   // ─── Wind effect on touch (mobile) ───
   var roseGroups = document.querySelectorAll('.rose-group');
   roseGroups.forEach(function(rose) {
@@ -465,6 +560,10 @@
       var scaleY = svgRect.height / 340;
       var screenX = svgRect.left + cx * scaleX;
       var screenY = svgRect.top + cy * scaleY;
+
+      // Hide hint after first click
+      var hint = document.getElementById('hint');
+      if (hint) { hint.style.opacity = '0'; setTimeout(function() { hint.remove(); }, 500); }
 
       // Hide the rose
       rose.style.opacity = '0';
@@ -493,6 +592,15 @@
           setTimeout(function() { el.remove(); }, 900);
         })(petal);
       }
+
+      // Show floating message
+      var msg = document.createElement('div');
+      msg.className = 'rose-message';
+      msg.textContent = getRandomMessage();
+      msg.style.left = screenX + 'px';
+      msg.style.top = (screenY - 20) + 'px';
+      document.body.appendChild(msg);
+      setTimeout(function() { msg.remove(); }, 3000);
 
       // Rebuild the rose after explosion
       setTimeout(function() {
