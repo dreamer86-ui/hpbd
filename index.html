@@ -333,8 +333,16 @@
     font-size: .65rem;
     opacity: .5;
     margin-top: .2rem;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .3rem;
   }
+  .chat-status {
+    font-size: .6rem;
+    letter-spacing: -2px;
+  }
+  .chat-status.read { color: rgba(128,203,196,.9); }
   .chat-msg.sent {
     align-self: flex-end;
     background: rgba(240,98,146,.3);
@@ -1173,7 +1181,7 @@
   replyBtn.addEventListener('click', function() {
     replyOverlay.classList.add('active');
     updateChatView();
-    setTimeout(function() { chatText.focus(); }, 100);
+    setTimeout(function() { chatMessages.scrollTop = chatMessages.scrollHeight; chatText.focus(); }, 100);
   });
 
   chatClose.addEventListener('click', function() {
@@ -1191,20 +1199,40 @@
     return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
   }
 
+  var otherLastSeen = 0;
+
   function appendMessage(data) {
     if (chatEmpty) { chatEmpty.remove(); chatEmpty = null; }
     var div = document.createElement('div');
     var isMine = data.user === chatUser;
     div.className = 'chat-msg ' + (isMine ? 'sent' : 'received');
+    div.setAttribute('data-ts', data.timestamp);
     var nameSpan = isMine ? '' : '<strong style="font-size:.75rem;color:rgba(248,187,208,.8);display:block;margin-bottom:.15rem">' + escapeHtml(data.user) + '</strong>';
     var imgHtml = '';
     if (data.image) {
       imgHtml = '<img src="' + data.image + '" alt="imagen" onclick="document.getElementById(\'imgViewerImg\').src=this.src;document.getElementById(\'imgViewer\').classList.add(\'active\')">';
     }
     var textHtml = data.text ? linkify(escapeHtml(data.text)) : '';
-    div.innerHTML = nameSpan + imgHtml + textHtml + '<span class="chat-time">' + formatTime(data.timestamp) + '</span>';
+    var statusHtml = '';
+    if (isMine) {
+      var isRead = otherLastSeen >= data.timestamp;
+      statusHtml = '<span class="chat-status' + (isRead ? ' read' : '') + '">' + (isRead ? '✓✓' : '✓') + '</span>';
+    }
+    div.innerHTML = nameSpan + imgHtml + textHtml + '<span class="chat-time">' + formatTime(data.timestamp) + statusHtml + '</span>';
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function updateReadStatus() {
+    var msgs = chatMessages.querySelectorAll('.chat-msg.sent');
+    msgs.forEach(function(el) {
+      var ts = parseInt(el.getAttribute('data-ts'));
+      var statusEl = el.querySelector('.chat-status');
+      if (statusEl && otherLastSeen >= ts) {
+        statusEl.className = 'chat-status read';
+        statusEl.textContent = '✓✓';
+      }
+    });
   }
 
   function escapeHtml(str) {
@@ -1378,6 +1406,42 @@
         // Listen for new messages in real time
         dbRef.orderByChild('timestamp').on('child_added', function(snapshot) {
           appendMessage(snapshot.val());
+        });
+
+        // ─── Read status (lastSeen) ───
+        var presenceRef = firebase.database().ref('presence');
+
+        // Update own lastSeen when chat is open
+        function updateLastSeen() {
+          if (chatUser && replyOverlay.classList.contains('active')) {
+            presenceRef.child(chatUser).set(Date.now());
+          }
+        }
+
+        // Update lastSeen on open, on new message, and periodically
+        var origOpenHandler = replyBtn.onclick;
+        replyBtn.addEventListener('click', function() {
+          setTimeout(updateLastSeen, 200);
+        });
+
+        // Also update when receiving messages while chat is open
+        dbRef.on('child_added', function() {
+          setTimeout(updateLastSeen, 300);
+        });
+
+        // Listen for other users' lastSeen
+        presenceRef.on('value', function(snapshot) {
+          var data = snapshot.val() || {};
+          var maxOther = 0;
+          for (var user in data) {
+            if (user !== chatUser && data[user] > maxOther) {
+              maxOther = data[user];
+            }
+          }
+          if (maxOther > otherLastSeen) {
+            otherLastSeen = maxOther;
+            updateReadStatus();
+          }
         });
       };
       document.head.appendChild(s2);
