@@ -144,16 +144,20 @@
   }
 
   .message-card .hint {
-    margin-top: .6rem;
-    font-size: .75rem;
-    color: rgba(255,255,255,.45);
+    margin-top: .8rem;
+    font-size: .85rem;
+    color: rgba(248,187,208,.85);
     font-style: italic;
-    animation: hint-pulse 2.5s ease-in-out infinite;
+    padding: .4rem .8rem;
+    background: rgba(255,255,255,.08);
+    border-radius: 8px;
+    border: 1px solid rgba(248,187,208,.25);
+    animation: hint-pulse 2s ease-in-out infinite;
     transition: opacity .5s;
   }
   @keyframes hint-pulse {
-    0%,100% { opacity:.45; }
-    50% { opacity:.75; }
+    0%,100% { opacity:.7; }
+    50% { opacity:1; }
   }
 
   .ribbon { animation: ribbon-wave 3s ease-in-out infinite; transform-origin: center top; }
@@ -230,6 +234,218 @@
   .music-btn.playing { animation: none; background: rgba(156,39,176,.85); }
   .music-btn.playing:hover { background: rgba(156,39,176,1); }
 
+  /* Reply button */
+  .reply-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 88px;
+    z-index: 100;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.3);
+    background: rgba(126,87,194,.85);
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: transform .2s, background .2s;
+    animation: btn-pulse 2s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+  .reply-btn:hover { transform: scale(1.1); background: rgba(126,87,194,1); }
+
+  /* Reply modal */
+  .reply-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+  }
+  .reply-overlay.active { display: flex; }
+
+  .reply-modal {
+    background: linear-gradient(160deg, #2d1b4e, #1a0a2e);
+    border: 1px solid rgba(206,147,216,.4);
+    border-radius: 16px;
+    padding: 0;
+    width: 90%;
+    max-width: 380px;
+    height: 70vh;
+    max-height: 520px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,.5), 0 0 20px rgba(206,147,216,.15);
+    overflow: hidden;
+  }
+  .chat-header {
+    padding: .8rem 1rem;
+    border-bottom: 1px solid rgba(206,147,216,.2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chat-header h3 {
+    font-family: 'Dancing Script', cursive;
+    color: #f0e8ff;
+    font-size: 1.3rem;
+    margin: 0;
+  }
+  .chat-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.5);
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 0 .3rem;
+    transition: color .2s;
+  }
+  .chat-close:hover { color: #fff; }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: .8rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(206,147,216,.3); border-radius: 2px; }
+
+  .chat-msg {
+    max-width: 80%;
+    padding: .5rem .8rem;
+    border-radius: 12px;
+    font-size: .85rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+    position: relative;
+  }
+  .chat-msg .chat-time {
+    font-size: .65rem;
+    opacity: .5;
+    margin-top: .2rem;
+    display: block;
+  }
+  .chat-msg.sent {
+    align-self: flex-end;
+    background: rgba(240,98,146,.3);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-msg.received {
+    align-self: flex-start;
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.9);
+    border-bottom-left-radius: 4px;
+  }
+  .chat-msg.system {
+    align-self: center;
+    background: none;
+    color: rgba(255,255,255,.4);
+    font-size: .75rem;
+    font-style: italic;
+    padding: .2rem;
+  }
+
+  .chat-input {
+    padding: .6rem;
+    border-top: 1px solid rgba(206,147,216,.2);
+    display: flex;
+    gap: .5rem;
+    align-items: flex-end;
+  }
+  .chat-input textarea {
+    flex: 1;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 10px;
+    color: #fff;
+    font-family: sans-serif;
+    font-size: .85rem;
+    padding: .5rem .7rem;
+    resize: none;
+    outline: none;
+    max-height: 80px;
+    transition: border-color .2s;
+  }
+  .chat-input textarea:focus { border-color: rgba(248,187,208,.6); }
+  .chat-input textarea::placeholder { color: rgba(255,255,255,.35); }
+  .chat-send {
+    background: rgba(240,98,146,.85);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, transform .15s;
+    flex-shrink: 0;
+  }
+  .chat-send:hover { background: rgba(240,98,146,1); transform: scale(1.05); }
+
+  .chat-empty {
+    text-align: center;
+    color: rgba(255,255,255,.3);
+    font-size: .8rem;
+    margin-top: 2rem;
+    font-style: italic;
+  }
+
+  /* Name prompt */
+  .name-prompt {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 1rem;
+  }
+  .name-prompt p {
+    color: rgba(255,255,255,.7);
+    font-size: .9rem;
+    text-align: center;
+  }
+  .name-prompt input {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: .9rem;
+    padding: .6rem 1rem;
+    outline: none;
+    text-align: center;
+    width: 80%;
+    max-width: 200px;
+  }
+  .name-prompt input::placeholder { color: rgba(255,255,255,.35); }
+  .name-prompt input:focus { border-color: rgba(248,187,208,.6); }
+  .name-prompt button {
+    background: rgba(240,98,146,.85);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: .5rem 1.5rem;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .name-prompt button:hover { background: rgba(240,98,146,1); }
+
   /* Responsive */
   .bouquet-svg {
     width: 280px;
@@ -244,6 +460,7 @@
     .message-card h2 { font-size: 1.3rem; }
     .message-card p { font-size: .82rem; }
     .music-btn { width: 44px; height: 44px; font-size: 18px; bottom: 16px; right: 16px; }
+    .reply-btn { width: 44px; height: 44px; font-size: 16px; bottom: 16px; right: 70px; }
   }
 
   @media (min-width: 401px) and (max-width: 600px) {
@@ -408,6 +625,36 @@
 <!-- Music button -->
 <button class="music-btn" id="musicBtn" title="Reproducir musica">&#9835;</button>
 
+<!-- Reply button -->
+<button class="reply-btn" id="replyBtn" title="Enviar un mensaje">&#9993;</button>
+
+<!-- Chat modal -->
+<div class="reply-overlay" id="replyOverlay">
+  <div class="reply-modal">
+    <div class="chat-header">
+      <h3>Mensajes</h3>
+      <div style="display:flex;gap:.3rem;align-items:center">
+        <button class="chat-close" id="chatClear" title="Borrar mensajes" style="font-size:1rem">&#128465;</button>
+        <button class="chat-close" id="chatClose">&times;</button>
+      </div>
+    </div>
+    <!-- Name prompt (shown first time) -->
+    <div class="name-prompt" id="namePrompt">
+      <p>¿Como te llamas?</p>
+      <input type="text" id="nameInput" placeholder="Tu nombre" maxlength="20">
+      <button id="nameConfirm">Entrar al chat</button>
+    </div>
+    <!-- Chat area (hidden until name is set) -->
+    <div class="chat-messages" id="chatMessages" style="display:none">
+      <div class="chat-empty" id="chatEmpty">Aun no hay mensajes. ¡Envia el primero!</div>
+    </div>
+    <div class="chat-input" id="chatInput" style="display:none">
+      <textarea id="chatText" placeholder="Escribe un mensaje..." rows="1"></textarea>
+      <button class="chat-send" id="chatSend">&#10148;</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   // ─── Falling petals ───
@@ -508,30 +755,28 @@
   requestAnimationFrame(animateParallax);
 
   // ─── Rose messages ───
+  // Frases mezcladas: alternando Principito, personales y "3 millones"
   var roseMessages = [
-    // El Principito
     '"Fue el tiempo que pasaste con tu rosa lo que la hizo tan importante." — El Principito',
-    '"Si vienes, por ejemplo, a las cuatro de la tarde, desde las tres comenzare a ser feliz." — El Principito',
-    '"Lo esencial es invisible a los ojos." — El Principito',
-    'Yo iría a la guerra por tí si lo necesitaras...',
-    'Por tí nadaría hasta el fondo del mar, aún sin poder nadar...',
-    '"Solo se ve bien con el corazon." — El Principito',
-    'Somos lo que llevamos en el corazón...',
-    '"Caminando en linea recta no puede uno llegar muy lejos." — El Principito',
-    // Te amo 3000 (Marvel)
-    'En un mundo lleno de gente común, tú eres mi excepcion de 3 millones...',
     'Te quiero tres millones mi Adi...',
+    '"Lo esencial es invisible a los ojos." — El Principito',
+    'Eres mi tatuaje sin tinta que ni el tiempo, ni la distancia podran borrar...',
+    '"Si vienes, por ejemplo, a las cuatro de la tarde, desde las tres comenzare a ser feliz." — El Principito',
     'Te quiero tres millones, en este y en todos los universos.',
-    'Eres mi tatuaje sin tinta que ni el tiempo, ni la distancia podrán borrar...',
-    'Te veo en las cosas pequeñas que me dijiste que te gustan...',
+    '"Solo se ve bien con el corazon." — El Principito',
+    'Yo iria a la guerra por ti si lo necesitaras...',
+    'En un mundo lleno de gente comun, tu eres mi excepcion de 3 millones...',
+    '"Caminando en linea recta no puede uno llegar muy lejos." — El Principito',
+    'Por ti nadaria hasta el fondo del mar, aun sin poder nadar...',
     'Decir que contigo me brillan los ojos, se queda corto, contigo me brilla el alma...',
+    'Somos lo que llevamos en el corazon...',
+    'Te veo en las cosas pequenas que me dijiste que te gustan...',
   ];
-  var lastMsgIndex = -1;
-  function getRandomMessage() {
-    var idx;
-    do { idx = Math.floor(Math.random() * roseMessages.length); } while (idx === lastMsgIndex);
-    lastMsgIndex = idx;
-    return roseMessages[idx];
+  var currentMsgIndex = 0;
+  function getNextMessage() {
+    var msg = roseMessages[currentMsgIndex];
+    currentMsgIndex = (currentMsgIndex + 1) % roseMessages.length;
+    return msg;
   }
 
   // ─── Wind effect on touch (mobile) ───
@@ -596,7 +841,7 @@
       // Show floating message
       var msg = document.createElement('div');
       msg.className = 'rose-message';
-      msg.textContent = getRandomMessage();
+      msg.textContent = getNextMessage();
       msg.style.left = screenX + 'px';
       msg.style.top = (screenY - 20) + 'px';
       document.body.appendChild(msg);
@@ -742,6 +987,149 @@
   }
   document.addEventListener('click', onFirstInteraction);
   document.addEventListener('touchstart', onFirstInteraction);
+
+  // ─── Chat with Firebase ───
+  var replyBtn = document.getElementById('replyBtn');
+  var replyOverlay = document.getElementById('replyOverlay');
+  var chatClose = document.getElementById('chatClose');
+  var namePrompt = document.getElementById('namePrompt');
+  var nameInput = document.getElementById('nameInput');
+  var nameConfirm = document.getElementById('nameConfirm');
+  var chatMessages = document.getElementById('chatMessages');
+  var chatInput = document.getElementById('chatInput');
+  var chatText = document.getElementById('chatText');
+  var chatSend = document.getElementById('chatSend');
+  var chatEmpty = document.getElementById('chatEmpty');
+
+  var chatUser = localStorage.getItem('hpbd_chat_user') || '';
+  var firebaseReady = false;
+  var dbRef = null;
+
+  // Show name or chat based on saved user
+  function updateChatView() {
+    if (chatUser) {
+      namePrompt.style.display = 'none';
+      chatMessages.style.display = 'flex';
+      chatInput.style.display = 'flex';
+    } else {
+      namePrompt.style.display = 'flex';
+      chatMessages.style.display = 'none';
+      chatInput.style.display = 'none';
+    }
+  }
+
+  replyBtn.addEventListener('click', function() {
+    replyOverlay.classList.add('active');
+    updateChatView();
+    if (chatUser) setTimeout(function() { chatText.focus(); }, 100);
+    else setTimeout(function() { nameInput.focus(); }, 100);
+  });
+
+  chatClose.addEventListener('click', function() {
+    replyOverlay.classList.remove('active');
+  });
+
+  replyOverlay.addEventListener('click', function(e) {
+    if (e.target === replyOverlay) replyOverlay.classList.remove('active');
+  });
+
+  nameConfirm.addEventListener('click', function() {
+    var name = nameInput.value.trim();
+    if (!name) return;
+    chatUser = name;
+    localStorage.setItem('hpbd_chat_user', chatUser);
+    updateChatView();
+    setTimeout(function() { chatText.focus(); }, 100);
+  });
+
+  nameInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') nameConfirm.click();
+  });
+
+  function formatTime(ts) {
+    var d = new Date(ts);
+    var h = d.getHours();
+    var m = d.getMinutes();
+    return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+  }
+
+  function appendMessage(data) {
+    if (chatEmpty) { chatEmpty.remove(); chatEmpty = null; }
+    var div = document.createElement('div');
+    var isMine = data.user === chatUser;
+    div.className = 'chat-msg ' + (isMine ? 'sent' : 'received');
+    var nameSpan = isMine ? '' : '<strong style="font-size:.75rem;color:rgba(248,187,208,.8);display:block;margin-bottom:.15rem">' + escapeHtml(data.user) + '</strong>';
+    div.innerHTML = nameSpan + escapeHtml(data.text) + '<span class="chat-time">' + formatTime(data.timestamp) + '</span>';
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function sendMessage() {
+    var text = chatText.value.trim();
+    if (!text || !firebaseReady) return;
+    dbRef.push({
+      user: chatUser,
+      text: text,
+      timestamp: Date.now()
+    });
+    chatText.value = '';
+    chatText.focus();
+  }
+
+  chatSend.addEventListener('click', sendMessage);
+  chatText.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Load Firebase SDK and connect
+  function loadFirebase() {
+    var s1 = document.createElement('script');
+    s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s1.onload = function() {
+      var s2 = document.createElement('script');
+      s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+      s2.onload = function() {
+        var app = firebase.initializeApp({
+          apiKey: "AIzaSyDpRPUnRmCPOstwKBFxUzUvaWAYuHLqXhQ",
+          authDomain: "hpbd-chat.firebaseapp.com",
+          databaseURL: "https://hpbd-chat-default-rtdb.firebaseio.com",
+          projectId: "hpbd-chat",
+          storageBucket: "hpbd-chat.firebasestorage.app",
+          messagingSenderId: "722314141396",
+          appId: "1:722314141396:web:1b7b4fbf63e212d56fe541"
+        });
+        dbRef = firebase.database().ref('messages');
+        firebaseReady = true;
+
+        // Listen for new messages in real time
+        dbRef.orderByChild('timestamp').on('child_added', function(snapshot) {
+          appendMessage(snapshot.val());
+        });
+      };
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  }
+  loadFirebase();
+
+  // ─── Clear messages ───
+  var chatClear = document.getElementById('chatClear');
+  chatClear.addEventListener('click', function() {
+    if (!firebaseReady) return;
+    if (!confirm('¿Borrar todos los mensajes?')) return;
+    dbRef.remove();
+    chatMessages.innerHTML = '<div class="chat-empty">Aun no hay mensajes. ¡Envia el primero!</div>';
+    chatEmpty = chatMessages.querySelector('.chat-empty');
+  });
 })();
 </script>
 </body>
