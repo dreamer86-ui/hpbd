@@ -740,7 +740,14 @@
 <div class="reply-overlay" id="replyOverlay">
   <div class="reply-modal">
     <div class="chat-header">
-      <h3>Mensajes</h3>
+      <div style="display:flex;flex-direction:column">
+        <h3>Mensajes</h3>
+        <div id="nameRow" style="display:flex;align-items:center;gap:.3rem">
+          <span id="chatUserDisplay" style="font-size:.7rem;color:rgba(248,187,208,.7);cursor:pointer" title="Click para editar"></span>
+          <button class="chat-close" id="chatRename" title="Cambiar nombre" style="font-size:.7rem;padding:0 .2rem">&#9998;</button>
+          <input id="chatRenameInput" maxlength="20" style="display:none;font-size:.7rem;background:rgba(255,255,255,.1);border:1px solid rgba(248,187,208,.5);border-radius:4px;color:#fff;padding:.1rem .4rem;outline:none;width:100px">
+        </div>
+      </div>
       <div style="display:flex;gap:.3rem;align-items:center">
         <button class="chat-close" id="chatClear" title="Borrar mensajes" style="font-size:1rem">&#128465;</button>
         <button class="chat-close" id="chatClose">&times;</button>
@@ -1131,6 +1138,7 @@
       namePrompt.style.display = 'none';
       chatMessages.style.display = 'flex';
       chatInput.style.display = 'flex';
+      if (typeof updateUserDisplay === 'function') updateUserDisplay();
     } else {
       namePrompt.style.display = 'flex';
       chatMessages.style.display = 'none';
@@ -1325,6 +1333,50 @@
   loadFirebase();
 
   // ─── Clear messages ───
+  // ─── Rename user (inline) ───
+  var chatRename = document.getElementById('chatRename');
+  var chatUserDisplay = document.getElementById('chatUserDisplay');
+  var chatRenameInput = document.getElementById('chatRenameInput');
+  var isRenaming = false;
+
+  function updateUserDisplay() {
+    chatUserDisplay.textContent = chatUser || '';
+  }
+
+  function startRename() {
+    if (isRenaming) return;
+    isRenaming = true;
+    chatRenameInput.value = chatUser;
+    chatUserDisplay.style.display = 'none';
+    chatRename.style.display = 'none';
+    chatRenameInput.style.display = 'inline-block';
+    chatRenameInput.focus();
+    chatRenameInput.select();
+  }
+
+  function finishRename() {
+    if (!isRenaming) return;
+    isRenaming = false;
+    var newName = chatRenameInput.value.trim();
+    if (newName) {
+      chatUser = newName;
+      localStorage.setItem('hpbd_chat_user', chatUser);
+    }
+    updateUserDisplay();
+    chatRenameInput.style.display = 'none';
+    chatUserDisplay.style.display = '';
+    chatRename.style.display = '';
+  }
+
+  chatRename.addEventListener('click', startRename);
+  chatUserDisplay.addEventListener('click', startRename);
+
+  chatRenameInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') finishRename();
+    if (e.key === 'Escape') { chatRenameInput.value = chatUser; finishRename(); }
+  });
+  chatRenameInput.addEventListener('blur', finishRename);
+
   var chatClear = document.getElementById('chatClear');
   chatClear.addEventListener('click', function() {
     if (!firebaseReady) return;
