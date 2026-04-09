@@ -463,17 +463,42 @@
     position: fixed;
     inset: 0;
     z-index: 300;
-    background: rgba(0,0,0,.85);
+    background: rgba(0,0,0,.9);
     align-items: center;
     justify-content: center;
-    cursor: pointer;
   }
   .img-viewer.active { display: flex; }
   .img-viewer img {
     max-width: 90vw;
-    max-height: 90vh;
+    max-height: 85vh;
     border-radius: 8px;
+    cursor: default;
+    transition: transform .2s ease;
   }
+  .img-viewer-actions {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 301;
+    display: flex;
+    gap: .5rem;
+  }
+  .img-viewer-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,.15);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    transition: background .2s;
+  }
+  .img-viewer-btn:hover { background: rgba(255,255,255,.3); }
 
   /* Emoji picker */
   .emoji-picker {
@@ -723,7 +748,7 @@
     </svg>
 
     <div class="message-card">
-      <h2>Feliz Cumpleaños</h2>
+      <h2>Feliz Cumpleaños mi Adi 🥳</h2>
       <p>Un ramo de rosas blancas, tan puras y especiales como t&uacute;. ¡Que este dia sea tan hermoso como mereces!</p>
       <p class="hint" id="hint">Toca las rosas para descubrir un mensaje</p>
     </div>
@@ -734,14 +759,14 @@
 <button class="music-btn" id="musicBtn" title="Reproducir musica">&#9835;</button>
 
 <!-- Reply button -->
-<button class="reply-btn" id="replyBtn" title="Enviar un mensaje">&#9993;</button>
+<button class="reply-btn" id="replyBtn" title="Chat">&#128172;</button>
 
 <!-- Chat modal -->
 <div class="reply-overlay" id="replyOverlay">
   <div class="reply-modal">
     <div class="chat-header">
       <div style="display:flex;flex-direction:column">
-        <h3>Mensajes</h3>
+        <h3>Nuestro Chat</h3>
         <div id="nameRow" style="display:flex;align-items:center;gap:.3rem">
           <span id="chatUserDisplay" style="font-size:.7rem;color:rgba(248,187,208,.7);cursor:pointer" title="Click para editar"></span>
           <button class="chat-close" id="chatRename" title="Cambiar nombre" style="font-size:.7rem;padding:0 .2rem">&#9998;</button>
@@ -780,7 +805,15 @@
 </div>
 
 <!-- Fullscreen image viewer -->
-<div class="img-viewer" id="imgViewer"><img id="imgViewerImg" src="" alt=""></div>
+<div class="img-viewer" id="imgViewer">
+  <div class="img-viewer-actions">
+    <button class="img-viewer-btn" id="imgZoomIn" title="Acercar">+</button>
+    <button class="img-viewer-btn" id="imgZoomOut" title="Alejar">&minus;</button>
+    <button class="img-viewer-btn" id="imgDownload" title="Descargar">&#11015;</button>
+    <button class="img-viewer-btn" id="imgClose" title="Cerrar">&times;</button>
+  </div>
+  <img id="imgViewerImg" src="" alt="">
+</div>
 
 <script>
 (function() {
@@ -884,20 +917,18 @@
   // ─── Rose messages ───
   // Frases mezcladas: alternando Principito, personales y "3 millones"
   var roseMessages = [
-    '"Fue el tiempo que pasaste con tu rosa lo que la hizo tan importante." — El Principito',
-    'Te quiero tres millones mi Adi...',
-    '"Lo esencial es invisible a los ojos." — El Principito',
-    'Eres mi tatuaje sin tinta que ni el tiempo, ni la distancia podran borrar...',
-    '"Si vienes, por ejemplo, a las cuatro de la tarde, desde las tres comenzare a ser feliz." — El Principito',
-    'Te quiero tres millones, en este y en todos los universos.',
-    '"Solo se ve bien con el corazon." — El Principito',
-    'Yo iria a la guerra por ti si lo necesitaras...',
-    'En un mundo lleno de gente comun, tu eres mi excepcion de 3 millones...',
-    '"Caminando en linea recta no puede uno llegar muy lejos." — El Principito',
-    'Por ti nadaria hasta el fondo del mar, aun sin poder nadar...',
-    'Decir que contigo me brillan los ojos, se queda corto, contigo me brilla el alma...',
-    'Somos lo que llevamos en el corazon...',
-    'Te veo en las cosas pequenas que me dijiste que te gustan...',
+    'Te quiero tres millones mi Adi 🫶...',
+    '"Lo esencial es invisible a los ojos. Solo se ve bien con el corazon 💝." — El Principito',
+    'Eres mi tatuaje sin tinta que ni el tiempo, ni la distancia podran borrar 💕...',
+    '"Fue el tiempo que pasaste con tu rosa lo que la hizo tan importante 🌹." — El Principito',
+    'Te quiero tres millones, en este y en todos los universos 🌌...',
+    '"Si vienes, por ejemplo, a las cuatro de la tarde, desde las tres comenzare a ser feliz 🦊." — El Principito',
+    'Yo iria a la guerra por ti si lo necesitaras 🤗...',
+    'En un mundo lleno de gente comun, tu eres mi excepcion de 3 millones ❤️...',
+    'Por ti nadaria hasta el fondo del mar, aun sin poder nadar 🌊...',
+    'Decir que contigo me brillan los ojos, se queda corto, contigo me brilla el alma ✨...',
+    'Somos lo que llevamos en el corazon 💖...',
+    'Te veo en las cosas pequenas que me dijiste que te gustan 🌼...',
   ];
   var currentMsgIndex = 0;
   function getNextMessage() {
@@ -1128,29 +1159,21 @@
   var chatSend = document.getElementById('chatSend');
   var chatEmpty = document.getElementById('chatEmpty');
 
-  var chatUser = localStorage.getItem('hpbd_chat_user') || '';
+  var chatUser = localStorage.getItem('hpbd_chat_user') || 'Invitado';
   var firebaseReady = false;
   var dbRef = null;
 
-  // Show name or chat based on saved user
   function updateChatView() {
-    if (chatUser) {
-      namePrompt.style.display = 'none';
-      chatMessages.style.display = 'flex';
-      chatInput.style.display = 'flex';
-      if (typeof updateUserDisplay === 'function') updateUserDisplay();
-    } else {
-      namePrompt.style.display = 'flex';
-      chatMessages.style.display = 'none';
-      chatInput.style.display = 'none';
-    }
+    namePrompt.style.display = 'none';
+    chatMessages.style.display = 'flex';
+    chatInput.style.display = 'flex';
+    if (typeof updateUserDisplay === 'function') updateUserDisplay();
   }
 
   replyBtn.addEventListener('click', function() {
     replyOverlay.classList.add('active');
     updateChatView();
-    if (chatUser) setTimeout(function() { chatText.focus(); }, 100);
-    else setTimeout(function() { nameInput.focus(); }, 100);
+    setTimeout(function() { chatText.focus(); }, 100);
   });
 
   chatClose.addEventListener('click', function() {
@@ -1159,19 +1182,6 @@
 
   replyOverlay.addEventListener('click', function(e) {
     if (e.target === replyOverlay) replyOverlay.classList.remove('active');
-  });
-
-  nameConfirm.addEventListener('click', function() {
-    var name = nameInput.value.trim();
-    if (!name) return;
-    chatUser = name;
-    localStorage.setItem('hpbd_chat_user', chatUser);
-    updateChatView();
-    setTimeout(function() { chatText.focus(); }, 100);
-  });
-
-  nameInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') nameConfirm.click();
   });
 
   function formatTime(ts) {
@@ -1297,8 +1307,52 @@
   });
 
   // ─── Fullscreen image viewer ───
-  document.getElementById('imgViewer').addEventListener('click', function() {
-    this.classList.remove('active');
+  var imgViewer = document.getElementById('imgViewer');
+  var imgViewerImg = document.getElementById('imgViewerImg');
+
+  var imgZoom = 1;
+
+  function resetZoom() {
+    imgZoom = 1;
+    imgViewerImg.style.transform = 'scale(1)';
+  }
+
+  function applyZoom(delta) {
+    imgZoom = Math.max(0.5, Math.min(5, imgZoom + delta));
+    imgViewerImg.style.transform = 'scale(' + imgZoom + ')';
+  }
+
+  // Open viewer resets zoom
+  var origOnclick = imgViewerImg.onclick;
+  // Watch for class add to reset zoom
+  new MutationObserver(function() {
+    if (imgViewer.classList.contains('active')) resetZoom();
+  }).observe(imgViewer, { attributes: true, attributeFilter: ['class'] });
+
+  // Close on background click
+  imgViewer.addEventListener('click', function(e) {
+    if (e.target === imgViewer) { imgViewer.classList.remove('active'); }
+  });
+
+  document.getElementById('imgClose').addEventListener('click', function() {
+    imgViewer.classList.remove('active');
+  });
+
+  document.getElementById('imgZoomIn').addEventListener('click', function() { applyZoom(0.3); });
+  document.getElementById('imgZoomOut').addEventListener('click', function() { applyZoom(-0.3); });
+
+  // Mouse wheel zoom
+  imgViewer.addEventListener('wheel', function(e) {
+    if (!imgViewer.classList.contains('active')) return;
+    e.preventDefault();
+    applyZoom(e.deltaY < 0 ? 0.2 : -0.2);
+  }, { passive: false });
+
+  document.getElementById('imgDownload').addEventListener('click', function() {
+    var a = document.createElement('a');
+    a.href = imgViewerImg.src;
+    a.download = 'imagen-chat.png';
+    a.click();
   });
 
   // Load Firebase SDK and connect
