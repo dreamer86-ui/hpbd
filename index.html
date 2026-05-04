@@ -257,6 +257,28 @@
     animation-delay: 1s;
   }
   .reply-btn:hover { transform: scale(1.1); background: rgba(126,87,194,1); }
+  .reply-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #f44336;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255,255,255,.5);
+    box-shadow: 0 2px 6px rgba(0,0,0,.35);
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+  .reply-badge.show { display: flex; }
 
   /* Reply modal */
   .reply-overlay {
@@ -767,7 +789,7 @@
 <button class="music-btn" id="musicBtn" title="Reproducir musica">&#9835;</button>
 
 <!-- Reply button -->
-<button class="reply-btn" id="replyBtn" title="Chat">&#128172;</button>
+<button class="reply-btn" id="replyBtn" title="Chat">&#128172;<span class="reply-badge" id="replyBadge"></span></button>
 
 <!-- Chat modal -->
 <div class="reply-overlay" id="replyOverlay">
@@ -1222,6 +1244,7 @@
     div.innerHTML = nameSpan + imgHtml + textHtml + '<span class="chat-time">' + formatTime(data.timestamp) + statusHtml + '</span>';
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (isMine) updateUnreadBadge();
   }
 
   function updateReadStatus() {
@@ -1234,6 +1257,25 @@
         statusEl.textContent = '✓✓';
       }
     });
+    updateUnreadBadge();
+  }
+
+  var replyBadge = document.getElementById('replyBadge');
+  function updateUnreadBadge() {
+    if (!replyBadge) return;
+    var msgs = chatMessages.querySelectorAll('.chat-msg.sent');
+    var count = 0;
+    msgs.forEach(function(el) {
+      var ts = parseInt(el.getAttribute('data-ts'));
+      if (ts > otherLastSeen) count++;
+    });
+    if (count > 0) {
+      replyBadge.textContent = count > 99 ? '99+' : count;
+      replyBadge.classList.add('show');
+    } else {
+      replyBadge.textContent = '';
+      replyBadge.classList.remove('show');
+    }
   }
 
   function escapeHtml(str) {
@@ -1503,6 +1545,7 @@
     dbRef.remove();
     chatMessages.innerHTML = '<div class="chat-empty">Aun no hay mensajes. ¡Envia el primero!</div>';
     chatEmpty = chatMessages.querySelector('.chat-empty');
+    updateUnreadBadge();
   });
 })();
 </script>
