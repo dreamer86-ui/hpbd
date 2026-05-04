@@ -1201,18 +1201,33 @@
     if (typeof updateUserDisplay === 'function') updateUserDisplay();
   }
 
+  var myLastSeen = parseInt(localStorage.getItem('hpbd_my_last_seen')) || Date.now();
+  if (!localStorage.getItem('hpbd_my_last_seen')) {
+    localStorage.setItem('hpbd_my_last_seen', myLastSeen);
+  }
+  function markSeen() {
+    myLastSeen = Date.now();
+    localStorage.setItem('hpbd_my_last_seen', myLastSeen);
+    if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
+  }
+
   replyBtn.addEventListener('click', function() {
     replyOverlay.classList.add('active');
     updateChatView();
     setTimeout(function() { chatMessages.scrollTop = chatMessages.scrollHeight; chatText.focus(); }, 100);
+    if (typeof updateUnreadBadge === 'function') updateUnreadBadge();
   });
 
   chatClose.addEventListener('click', function() {
     replyOverlay.classList.remove('active');
+    markSeen();
   });
 
   replyOverlay.addEventListener('click', function(e) {
-    if (e.target === replyOverlay) replyOverlay.classList.remove('active');
+    if (e.target === replyOverlay) {
+      replyOverlay.classList.remove('active');
+      markSeen();
+    }
   });
 
   function formatTime(ts) {
@@ -1244,7 +1259,7 @@
     div.innerHTML = nameSpan + imgHtml + textHtml + '<span class="chat-time">' + formatTime(data.timestamp) + statusHtml + '</span>';
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    if (isMine) updateUnreadBadge();
+    updateUnreadBadge();
   }
 
   function updateReadStatus() {
@@ -1257,17 +1272,21 @@
         statusEl.textContent = '✓✓';
       }
     });
-    updateUnreadBadge();
   }
 
   var replyBadge = document.getElementById('replyBadge');
   function updateUnreadBadge() {
     if (!replyBadge) return;
-    var msgs = chatMessages.querySelectorAll('.chat-msg.sent');
+    if (replyOverlay.classList.contains('active')) {
+      replyBadge.textContent = '';
+      replyBadge.classList.remove('show');
+      return;
+    }
+    var msgs = chatMessages.querySelectorAll('.chat-msg.received');
     var count = 0;
     msgs.forEach(function(el) {
       var ts = parseInt(el.getAttribute('data-ts'));
-      if (ts > otherLastSeen) count++;
+      if (ts > myLastSeen) count++;
     });
     if (count > 0) {
       replyBadge.textContent = count > 99 ? '99+' : count;
