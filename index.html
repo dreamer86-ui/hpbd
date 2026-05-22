@@ -385,6 +385,147 @@
     font-style: italic;
     padding: .2rem;
   }
+  .chat-msg-actions {
+    position: absolute;
+    top: 2px;
+    display: flex;
+    gap: 4px;
+    opacity: .35;
+    transition: opacity .2s;
+  }
+  .chat-msg:hover .chat-msg-actions { opacity: 1; }
+  .chat-msg.sent .chat-msg-actions { left: -58px; }
+  .chat-msg.received .chat-msg-actions { right: -58px; }
+  .chat-msg-action-btn {
+    background: rgba(0,0,0,.35);
+    color: rgba(255,255,255,.85);
+    border: none;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 10px;
+    line-height: 1;
+    transition: background .2s, transform .15s;
+  }
+  .chat-msg-action-btn:hover { background: rgba(0,0,0,.6); transform: scale(1.1); }
+  .reactions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: .3rem;
+  }
+  .reaction-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0,0,0,.3);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 1px 7px;
+    font-size: .75rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, border-color .15s;
+    color: #fff;
+  }
+  .reaction-pill:hover { background: rgba(0,0,0,.5); }
+  .reaction-pill.mine {
+    background: rgba(240,98,146,.35);
+    border-color: rgba(248,187,208,.6);
+  }
+  .reaction-pill .reaction-count {
+    font-size: .68rem;
+    color: rgba(255,255,255,.85);
+    font-weight: 600;
+  }
+  .reaction-picker {
+    position: fixed;
+    background: rgba(40,30,60,.95);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(248,187,208,.3);
+    border-radius: 22px;
+    padding: 4px 8px;
+    display: flex;
+    gap: 2px;
+    z-index: 250;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+  }
+  .reaction-picker button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 3px 5px;
+    border-radius: 50%;
+    transition: transform .15s, background .15s;
+  }
+  .reaction-picker button:hover {
+    transform: scale(1.3);
+    background: rgba(255,255,255,.1);
+  }
+  .chat-msg .quoted {
+    background: rgba(0,0,0,.2);
+    border-left: 3px solid rgba(248,187,208,.7);
+    padding: .25rem .5rem;
+    border-radius: 4px;
+    margin-bottom: .35rem;
+    font-size: .72rem;
+    cursor: pointer;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .chat-msg .quoted-author {
+    color: rgba(248,187,208,.95);
+    font-weight: 600;
+    display: block;
+    margin-bottom: .1rem;
+  }
+  .chat-msg .quoted-text {
+    color: rgba(255,255,255,.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .chat-msg.highlight {
+    animation: msg-flash 1.2s ease;
+  }
+  @keyframes msg-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248,187,208,0); }
+    30%, 60% { box-shadow: 0 0 0 4px rgba(248,187,208,.5); }
+  }
+  .reply-preview {
+    background: rgba(255,255,255,.08);
+    border-left: 3px solid rgba(248,187,208,.7);
+    padding: .4rem .6rem;
+    border-radius: 6px;
+    font-size: .75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .reply-preview-content { flex: 1; min-width: 0; overflow: hidden; }
+  .reply-preview-author {
+    color: rgba(248,187,208,.95);
+    font-weight: 600;
+    display: block;
+  }
+  .reply-preview-text {
+    color: rgba(255,255,255,.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reply-preview-cancel {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.6);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 .3rem;
+    flex-shrink: 0;
+  }
+  .reply-preview-cancel:hover { color: #fff; }
 
   .chat-input {
     padding: .6rem;
@@ -819,6 +960,7 @@
       <div class="chat-empty" id="chatEmpty">Aun no hay mensajes. ¡Envia el primero!</div>
     </div>
     <div class="chat-input" id="chatInput" style="display:none;position:relative">
+      <div id="replyPreviewArea"></div>
       <div id="imgPreviewArea"></div>
       <div class="emoji-picker" id="emojiPicker"></div>
       <div class="chat-input-row">
@@ -1239,13 +1381,23 @@
 
   var otherLastSeen = 0;
 
-  function appendMessage(data) {
+  function appendMessage(data, key) {
     if (chatEmpty) { chatEmpty.remove(); chatEmpty = null; }
     var div = document.createElement('div');
     var isMine = data.user === chatUser;
     div.className = 'chat-msg ' + (isMine ? 'sent' : 'received');
     div.setAttribute('data-ts', data.timestamp);
+    div.__msgData = data;
+    div.__msgKey = key;
     var nameSpan = isMine ? '' : '<strong style="font-size:.75rem;color:rgba(248,187,208,.8);display:block;margin-bottom:.15rem">' + escapeHtml(data.user) + '</strong>';
+    var quotedHtml = '';
+    if (data.replyTo) {
+      var qText = data.replyTo.text ? escapeHtml(data.replyTo.text) : (data.replyTo.image ? '📷 Imagen' : '');
+      quotedHtml = '<div class="quoted" data-target="' + data.replyTo.timestamp + '">'
+        + '<span class="quoted-author">' + escapeHtml(data.replyTo.user) + '</span>'
+        + '<div class="quoted-text">' + qText + '</div>'
+      + '</div>';
+    }
     var imgHtml = '';
     if (data.image) {
       imgHtml = '<img src="' + data.image + '" alt="imagen" onclick="document.getElementById(\'imgViewerImg\').src=this.src;document.getElementById(\'imgViewer\').classList.add(\'active\')">';
@@ -1256,10 +1408,53 @@
       var isRead = otherLastSeen >= data.timestamp;
       statusHtml = '<span class="chat-status' + (isRead ? ' read' : '') + '">' + (isRead ? '✓✓' : '✓') + '</span>';
     }
-    div.innerHTML = nameSpan + imgHtml + textHtml + '<span class="chat-time">' + formatTime(data.timestamp) + statusHtml + '</span>';
+    var reactionsHtml = buildReactionsHtml(data.reactions);
+    var actionsHtml = '<div class="chat-msg-actions">'
+      + '<button class="chat-msg-action-btn chat-msg-react-btn" title="Reaccionar">😊</button>'
+      + '<button class="chat-msg-action-btn chat-msg-reply-btn" title="Responder">↩</button>'
+      + '</div>';
+    div.innerHTML = nameSpan + quotedHtml + imgHtml + textHtml + reactionsHtml
+      + '<span class="chat-time">' + formatTime(data.timestamp) + statusHtml + '</span>' + actionsHtml;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     updateUnreadBadge();
+  }
+
+  function buildReactionsHtml(reactions) {
+    if (!reactions) return '';
+    var keys = Object.keys(reactions);
+    var pills = '';
+    keys.forEach(function(emoji) {
+      var users = reactions[emoji];
+      if (!users || !users.length) return;
+      var mine = users.indexOf(chatUser) >= 0;
+      var title = users.join(', ');
+      pills += '<button class="reaction-pill' + (mine ? ' mine' : '') + '" data-emoji="' + escapeHtml(emoji) + '" title="' + escapeHtml(title) + '">'
+        + '<span>' + emoji + '</span>'
+        + '<span class="reaction-count">' + users.length + '</span>'
+        + '</button>';
+    });
+    if (!pills) return '';
+    return '<div class="reactions-row">' + pills + '</div>';
+  }
+
+  function updateMessageReactions(data, key) {
+    var el = chatMessages.querySelector('[data-ts="' + data.timestamp + '"]');
+    if (!el) return;
+    el.__msgData = data;
+    el.__msgKey = key;
+    var existing = el.querySelector('.reactions-row');
+    var newHtml = buildReactionsHtml(data.reactions);
+    if (existing) {
+      if (newHtml) {
+        existing.outerHTML = newHtml;
+      } else {
+        existing.remove();
+      }
+    } else if (newHtml) {
+      var timeEl = el.querySelector('.chat-time');
+      if (timeEl) timeEl.insertAdjacentHTML('beforebegin', newHtml);
+    }
   }
 
   function updateReadStatus() {
@@ -1349,17 +1544,191 @@
     };
     if (text) msg.text = text;
     if (pendingImage) msg.image = pendingImage;
+    if (pendingReply) {
+      msg.replyTo = {
+        user: pendingReply.user,
+        timestamp: pendingReply.timestamp
+      };
+      if (pendingReply.text) msg.replyTo.text = pendingReply.text;
+      if (pendingReply.image) msg.replyTo.image = true;
+    }
     dbRef.push(msg);
     chatText.value = '';
     clearImage();
+    cancelReply();
     chatText.focus();
   }
+
+  // ─── Reply / quote feature ───
+  var pendingReply = null;
+  var replyPreviewArea = document.getElementById('replyPreviewArea');
+
+  function showReplyPreview(data) {
+    pendingReply = data;
+    var snippet = data.text ? escapeHtml(data.text) : (data.image ? '📷 Imagen' : '');
+    replyPreviewArea.innerHTML = '<div class="reply-preview">'
+      + '<div class="reply-preview-content">'
+        + '<span class="reply-preview-author">Respondiendo a ' + escapeHtml(data.user) + '</span>'
+        + '<div class="reply-preview-text">' + snippet + '</div>'
+      + '</div>'
+      + '<button class="reply-preview-cancel" id="replyCancelBtn" title="Cancelar">&times;</button>'
+    + '</div>';
+    document.getElementById('replyCancelBtn').addEventListener('click', cancelReply);
+    chatText.focus();
+  }
+
+  function cancelReply() {
+    pendingReply = null;
+    replyPreviewArea.innerHTML = '';
+  }
+
+  function jumpToMessage(ts) {
+    var target = chatMessages.querySelector('[data-ts="' + ts + '"]');
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.remove('highlight');
+    void target.offsetWidth;
+    target.classList.add('highlight');
+  }
+
+  // Click on reply button, react button, reaction pill, or quoted block (delegated)
+  chatMessages.addEventListener('click', function(e) {
+    var replyBtn = e.target.closest('.chat-msg-reply-btn');
+    if (replyBtn) {
+      var msgEl = replyBtn.closest('.chat-msg');
+      if (msgEl && msgEl.__msgData) showReplyPreview(msgEl.__msgData);
+      return;
+    }
+    var reactBtn = e.target.closest('.chat-msg-react-btn');
+    if (reactBtn) {
+      e.stopPropagation();
+      var reactMsgEl = reactBtn.closest('.chat-msg');
+      if (reactMsgEl) openReactionPicker(reactMsgEl);
+      return;
+    }
+    var pill = e.target.closest('.reaction-pill');
+    if (pill) {
+      e.stopPropagation();
+      var pillMsgEl = pill.closest('.chat-msg');
+      if (pillMsgEl && pillMsgEl.__msgKey) {
+        toggleReaction(pillMsgEl.__msgKey, pill.getAttribute('data-emoji'));
+      }
+      return;
+    }
+    var quoted = e.target.closest('.quoted');
+    if (quoted) {
+      var ts = quoted.getAttribute('data-target');
+      if (ts) jumpToMessage(ts);
+    }
+  });
+
+  // ─── Reaction picker ───
+  var REACTION_EMOJIS = ['👍','❤️','😂','😮','😢','🙏'];
+  var activeReactionPicker = null;
+
+  function openReactionPicker(msgEl) {
+    closeReactionPicker();
+    if (!msgEl.__msgKey) return;
+    var picker = document.createElement('div');
+    picker.className = 'reaction-picker';
+    REACTION_EMOJIS.forEach(function(emoji) {
+      var b = document.createElement('button');
+      b.textContent = emoji;
+      b.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        toggleReaction(msgEl.__msgKey, emoji);
+        closeReactionPicker();
+      });
+      picker.appendChild(b);
+    });
+    document.body.appendChild(picker);
+    activeReactionPicker = picker;
+    var rect = msgEl.getBoundingClientRect();
+    var pickerRect = picker.getBoundingClientRect();
+    var left = rect.left;
+    var top = rect.top - pickerRect.height - 6;
+    if (top < 8) top = rect.bottom + 6;
+    if (left + pickerRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - pickerRect.width - 8;
+    }
+    if (left < 8) left = 8;
+    picker.style.left = left + 'px';
+    picker.style.top = top + 'px';
+    setTimeout(function() {
+      document.addEventListener('click', closeReactionPicker, { once: true });
+    }, 0);
+  }
+
+  function closeReactionPicker() {
+    if (activeReactionPicker) {
+      activeReactionPicker.remove();
+      activeReactionPicker = null;
+    }
+  }
+
+  function toggleReaction(msgKey, emoji) {
+    if (!firebaseReady || !dbRef || !msgKey) return;
+    var ref = dbRef.child(msgKey).child('reactions').child(emoji);
+    ref.transaction(function(current) {
+      current = current || [];
+      var idx = current.indexOf(chatUser);
+      if (idx >= 0) {
+        current.splice(idx, 1);
+        if (current.length === 0) return null;
+      } else {
+        current.push(chatUser);
+      }
+      return current;
+    });
+  }
+
+  chatMessages.addEventListener('scroll', closeReactionPicker, { passive: true });
+
+  // Long-press to reply (mobile-friendly)
+  var pressTimer = null;
+  var pressStartX = 0, pressStartY = 0;
+
+  function onPressStart(e) {
+    var el = e.target.closest('.chat-msg');
+    if (!el || el.classList.contains('system') || !el.__msgData) return;
+    if (e.target.closest('img, a, .chat-msg-reply-btn, .chat-msg-react-btn, .reaction-pill, .quoted')) return;
+    var p = e.touches ? e.touches[0] : e;
+    pressStartX = p.clientX;
+    pressStartY = p.clientY;
+    pressTimer = setTimeout(function() {
+      pressTimer = null;
+      if (navigator.vibrate) navigator.vibrate(40);
+      showReplyPreview(el.__msgData);
+    }, 500);
+  }
+  function onPressMove(e) {
+    if (!pressTimer) return;
+    var p = e.touches ? e.touches[0] : e;
+    if (Math.abs(p.clientX - pressStartX) > 10 || Math.abs(p.clientY - pressStartY) > 10) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+  }
+  function onPressEnd() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  }
+
+  chatMessages.addEventListener('touchstart', onPressStart, { passive: true });
+  chatMessages.addEventListener('touchmove', onPressMove, { passive: true });
+  chatMessages.addEventListener('touchend', onPressEnd);
+  chatMessages.addEventListener('touchcancel', onPressEnd);
+  chatMessages.addEventListener('mousedown', onPressStart);
+  chatMessages.addEventListener('mousemove', onPressMove);
+  chatMessages.addEventListener('mouseup', onPressEnd);
+  chatMessages.addEventListener('mouseleave', onPressEnd);
 
   chatSend.addEventListener('click', sendMessage);
   chatText.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    } else if (e.key === 'Escape' && pendingReply) {
+      cancelReply();
     }
   });
 
@@ -1367,11 +1736,11 @@
   var emojiBtn = document.getElementById('emojiBtn');
   var emojiPicker = document.getElementById('emojiPicker');
   var emojis = [
-    '😊','😂','🥰','😍','😘','😜','😎','🤗','🥳','🎉',
+    '🫶','😊','😂','🥰','😍','😘','😜','😎','🤗','🥳',
     '❤️','💕','💖','💗','💘','💝','🌹','🌸','🌺','🌷',
     '🎂','🎁','🎈','🎊','🎵','🎶','✨','⭐','🌟','💫',
     '🙏','👏','💪','🤞','✌️','🤟','👋','🤭','😇','🦋',
-    '🍰','🧁','🍫','🍬','☀️','🌈','🔥','💐','🪻','🫶'
+    '🍰','🧁','🍫','🍬','☀️','🌈','🔥','💐','🪻','🎉'
   ];
   // Build picker
   emojis.forEach(function(em) {
@@ -1467,7 +1836,12 @@
 
         // Listen for new messages in real time
         dbRef.orderByChild('timestamp').on('child_added', function(snapshot) {
-          appendMessage(snapshot.val());
+          appendMessage(snapshot.val(), snapshot.key);
+        });
+
+        // Update existing messages (e.g. reactions) in real time
+        dbRef.on('child_changed', function(snapshot) {
+          updateMessageReactions(snapshot.val(), snapshot.key);
         });
 
         // ─── Read status (lastSeen) ───
@@ -1565,6 +1939,7 @@
     chatMessages.innerHTML = '<div class="chat-empty">Aun no hay mensajes. ¡Envia el primero!</div>';
     chatEmpty = chatMessages.querySelector('.chat-empty');
     updateUnreadBadge();
+    cancelReply();
   });
 })();
 </script>
