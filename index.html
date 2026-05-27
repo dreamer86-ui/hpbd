@@ -1513,21 +1513,72 @@
   imgInput.addEventListener('change', function() {
     var file = imgInput.files[0];
     if (!file) return;
-    // Limit to 500KB for Firebase
-    if (file.size > 500 * 1024) {
-      alert('La imagen es muy grande. Maximo 500KB.');
+    // Limit raw upload to 2MB; we compress before storing
+    if (file.size > 2 * 1024 * 1024) {
+      alert('La imagen es muy grande. Maximo 2MB.');
       imgInput.value = '';
       return;
     }
     var reader = new FileReader();
     reader.onload = function(e) {
-      pendingImage = e.target.result;
-      imgPreviewArea.innerHTML = '<div class="chat-img-preview"><img src="' + pendingImage + '"><button class="remove-img" id="removeImg">&times;</button></div>';
-      document.getElementById('removeImg').addEventListener('click', clearImage);
+      var original = e.target.result;
+      imgPreviewArea.innerHTML = '<div class="chat-img-preview" style="position:relative">'
+        + '<img src="' + original + '" style="opacity:.5">'
+        + '<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem;background:rgba(0,0,0,.4);border-radius:8px">Comprimiendo...</span>'
+        + '</div>';
+      processImage(original).then(function(compressed) {
+        pendingImage = compressed;
+        imgPreviewArea.innerHTML = '<div class="chat-img-preview"><img src="' + pendingImage + '"><button class="remove-img" id="removeImg">&times;</button></div>';
+        document.getElementById('removeImg').addEventListener('click', clearImage);
+      }).catch(function() {
+        alert('No se pudo procesar la imagen.');
+        clearImage();
+      });
     };
     reader.readAsDataURL(file);
     imgInput.value = '';
   });
+
+  function compressImage(dataUrl, maxDim, quality) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function() { reject(new Error('load failed')); };
+      img.src = dataUrl;
+    });
+  }
+
+  function processImage(dataUrl) {
+    var targetBytes = 700 * 1024;
+    var attempts = [
+      { dim: 1600, q: 0.85 },
+      { dim: 1280, q: 0.7 },
+      { dim: 1024, q: 0.6 },
+      { dim: 800, q: 0.5 }
+    ];
+    function tryNext(i) {
+      var a = attempts[i];
+      return compressImage(dataUrl, a.dim, a.q).then(function(r) {
+        if (r.length <= targetBytes || i >= attempts.length - 1) return r;
+        return tryNext(i + 1);
+      });
+    }
+    return tryNext(0);
+  }
 
   function clearImage() {
     pendingImage = null;
